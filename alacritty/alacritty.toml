@@ -1,0 +1,17 @@
+[general]
+import = [
+  "/Users/ray-d-song/.config/alacritty/alacritty-theme/themes/github_light_tritanopia.toml"
+]
+
+[env]
+TERM = "xterm-256color"  
+
+[font]
+normal = { family = "MesloLGL Nerd Font", style = "Regular" }
+bold = { family = "MesloLGL Nerd Font", style = "Bold" }
+italic = { family = "MesloLGL Nerd Font", style = "Italic" }
+offset = { x = 0, y = -2 }
+size = 15
+
+[window]
+dimensions = {columns = 200, lines = 80}
