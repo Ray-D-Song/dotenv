@@ -1,6 +1,6 @@
 [general]
 import = [
-  "/Users/ray-d-song/.config/alacritty/alacritty-theme/themes/github_light_tritanopia.toml"
+  "alacritty-theme/themes/github_light_tritanopia.toml"
 ]
 
 [env]
