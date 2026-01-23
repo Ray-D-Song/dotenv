@@ -94,7 +94,7 @@ async function installNvim() {
 async function installGo() {
   console.log('\n📦 Installing Go...');
 
-  if (!runCommand('sudo apt install -y golang-go', 'Installing Go via apt')) {
+  if (!runCommand('sudo apt install -y golang', 'Installing Go via apt')) {
     return false;
   }
 
@@ -142,7 +142,7 @@ async function installAlacritty() {
 async function installZellij() {
   console.log('\n📦 Installing Zellij...');
 
-  const installCmd = `bash <(curl -L https://zellij.dev/launch)`;
+  const installCmd = `cargo install --locked zellij`;
 
   if (!runCommand(installCmd, 'Installing Zellij')) {
     return false;
