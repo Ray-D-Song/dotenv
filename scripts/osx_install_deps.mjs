@@ -157,6 +157,36 @@ async function installUnzip() {
 }
 
 /**
+ * Installs GitHub CLI via Homebrew
+ * @returns {Promise<boolean>} True if installation succeeded, false otherwise
+ */
+async function installGh() {
+  console.log('\n📦 Installing GitHub CLI...');
+
+  if (!runCommand('brew install gh', 'Installing GitHub CLI via Homebrew')) {
+    return false;
+  }
+
+  console.log('✓ GitHub CLI installed successfully');
+  return true;
+}
+
+/**
+ * Installs lazygit via Homebrew
+ * @returns {Promise<boolean>} True if installation succeeded, false otherwise
+ */
+async function installLazygit() {
+  console.log('\n📦 Installing lazygit...');
+
+  if (!runCommand('brew install lazygit', 'Installing lazygit via Homebrew')) {
+    return false;
+  }
+
+  console.log('✓ lazygit installed successfully');
+  return true;
+}
+
+/**
  * Installs missing dependencies on macOS systems
  * @param {import('./check_deps.mjs').CheckDepsResult} result - The result from checkDeps function
  * @returns {Promise<void>}
@@ -237,6 +267,18 @@ Starting macOS dependency installation
     installResults.zellij = await installZellij();
   } else {
     console.log('\n✓ Zellij is already installed');
+  }
+
+  if (!details.gh) {
+    installResults.gh = await installGh();
+  } else {
+    console.log('\n✓ GitHub CLI is already installed');
+  }
+
+  if (!details.lazygit) {
+    installResults.lazygit = await installLazygit();
+  } else {
+    console.log('\n✓ lazygit is already installed');
   }
 
   // Summary

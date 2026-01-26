@@ -16,6 +16,8 @@ const commonDeps = {
   'cargo': 'Cargo (Rust)',
   'alacritty': 'Alacritty',
   'zellij': 'Zellij',
+  'gh': 'GitHub CLI',
+  'lazygit': 'lazygit',
 };
 
 /**

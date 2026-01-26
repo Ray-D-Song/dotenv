@@ -168,6 +168,64 @@ async function installPodman() {
 }
 
 /**
+ * Installs GitHub CLI (gh) by adding the official repository and installing via apt
+ * @returns {Promise<boolean>} True if installation succeeded, false otherwise
+ */
+async function installGh() {
+  console.log('\n📦 Installing GitHub CLI...');
+
+  // Ensure wget is installed
+  if (!runCommand('type -p wget >/dev/null || (sudo apt update && sudo apt install wget -y)', 'Ensuring wget is installed')) {
+    return false;
+  }
+
+  // Create keyring directory
+  if (!runCommand('sudo mkdir -p -m 755 /etc/apt/keyrings', 'Creating keyring directory')) {
+    return false;
+  }
+
+  // Download and install GitHub CLI keyring
+  const downloadKeyring = `out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
+  if (!runCommand(downloadKeyring, 'Downloading and installing GitHub CLI keyring')) {
+    return false;
+  }
+
+  // Create sources.list.d directory
+  if (!runCommand('sudo mkdir -p -m 755 /etc/apt/sources.list.d', 'Creating sources.list.d directory')) {
+    return false;
+  }
+
+  // Add GitHub CLI repository
+  const addRepo = `echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null`;
+  if (!runCommand(addRepo, 'Adding GitHub CLI repository')) {
+    return false;
+  }
+
+  // Update apt and install gh
+  if (!runCommand('sudo apt update && sudo apt install gh -y', 'Installing GitHub CLI')) {
+    return false;
+  }
+
+  console.log('✓ GitHub CLI installed successfully');
+  return true;
+}
+
+/**
+ * Installs lazygit via apt package manager
+ * @returns {Promise<boolean>} True if installation succeeded, false otherwise
+ */
+async function installLazygit() {
+  console.log('\n📦 Installing lazygit...');
+
+  if (!runCommand('sudo apt install -y lazygit', 'Installing lazygit via apt')) {
+    return false;
+  }
+
+  console.log('✓ lazygit installed successfully');
+  return true;
+}
+
+/**
  * Installs missing dependencies on Linux systems
  * @param {import('./check_deps.mjs').CheckDepsResult} result - The result from checkDeps function
  * @returns {Promise<void>}
@@ -237,6 +295,18 @@ Starting Linux dependency installation
     installResults.podman = await installPodman();
   } else {
     console.log('\n✓ Podman is already installed');
+  }
+
+  if (!details.gh) {
+    installResults.gh = await installGh();
+  } else {
+    console.log('\n✓ GitHub CLI is already installed');
+  }
+
+  if (!details.lazygit) {
+    installResults.lazygit = await installLazygit();
+  } else {
+    console.log('\n✓ lazygit is already installed');
   }
 
   // Summary
