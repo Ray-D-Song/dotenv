@@ -2,6 +2,20 @@
 
 # Default target: install everything
 install:
+	@# Check if running with sudo
+	@if [ -n "$$SUDO_USER" ]; then \
+		echo ""; \
+		echo "========================================"; \
+		echo "❌ Error: Do not run with sudo!"; \
+		echo "========================================"; \
+		echo ""; \
+		echo "Please run without sudo:"; \
+		echo "  make install"; \
+		echo ""; \
+		echo "The scripts will request sudo privileges when needed."; \
+		echo ""; \
+		exit 1; \
+	fi
 	@echo ""
 	@echo "========================================"
 	@echo "Starting installation process..."
