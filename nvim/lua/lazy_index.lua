@@ -31,6 +31,11 @@ require("lazy").setup({
       import = 'editor.fzf'
     },
     {
+      "manuuurino/autoread.nvim",
+      cmd = "Autoread",
+      opts = {},
+    },
+    {
       "mg979/vim-visual-multi",
       branch = "master",
       init = function()
