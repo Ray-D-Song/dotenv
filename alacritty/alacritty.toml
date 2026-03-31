@@ -1,6 +1,6 @@
 [general]
 import = [
-  "alacritty-theme/themes/github_light_tritanopia.toml"
+  "alacritty-theme/themes/github_dark_tritanopia.toml"
 ]
 
 [env]
