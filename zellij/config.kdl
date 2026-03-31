@@ -275,7 +275,7 @@ web_client {
  
 simplified_ui true
  
-theme "iceberg-light"
+theme "iceberg-dark"
  
 // Choose the base input mode of zellij.
 // Default: normal
