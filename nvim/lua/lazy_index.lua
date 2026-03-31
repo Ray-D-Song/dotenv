@@ -180,7 +180,6 @@ require("lazy").setup({
         local function apply_theme(preset)
           require("calm").setup({
             preset = preset,
-            transparent = true,
           })
           vim.cmd.colorscheme("calm")
         end
