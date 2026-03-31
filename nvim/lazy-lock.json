@@ -1,5 +1,7 @@
 {
   "Comment.nvim": { "branch": "master", "commit": "e30b7f2008e52442154b66f7c519bfd2f1e32acb" },
+  "auto-dark-mode.nvim": { "branch": "main", "commit": "54058b4fe414bd64bd2904a6f8a63f1f14e3d8df" },
+  "autoread.nvim": { "branch": "main", "commit": "1e076c467feec1cb4294b739c78bbf8c35995179" },
   "blink.cmp": { "branch": "main", "commit": "451168851e8e2466bc97ee3e026c3dcb9141ce07" },
   "calm.nvim": { "branch": "main", "commit": "ff1ca7b99efe291accc9db23ca14bfefdeb313be" },
   "friendly-snippets": { "branch": "main", "commit": "6cd7280adead7f586db6fccbd15d2cac7e2188b9" },

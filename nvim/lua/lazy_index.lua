@@ -172,16 +172,34 @@ require("lazy").setup({
       end,
     },
     {
+      "f-person/auto-dark-mode.nvim",
+      lazy = false,
+      priority = 1001,
+      dependencies = { "ray-d-song/calm.nvim" },
+      config = function()
+        local function apply_theme(preset)
+          require("calm").setup({
+            preset = preset,
+            transparent = true,
+          })
+          vim.cmd.colorscheme("calm")
+        end
+
+        require("auto-dark-mode").setup({
+          update_interval = 1000,
+          set_dark_mode = function()
+            apply_theme("tomorrow")
+          end,
+          set_light_mode = function()
+            apply_theme("pyments")
+          end,
+        })
+      end,
+    },
+    {
       "ray-d-song/calm.nvim",
       lazy = false,
       priority = 1000,
-      config = function()
-        require("calm").setup({
-          preset = "pyments"
-        })
-
-        vim.cmd.colorscheme("calm")
-      end,
     },
     {
       'smoka7/hop.nvim',
