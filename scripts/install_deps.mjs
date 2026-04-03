@@ -18,6 +18,7 @@ const commonDeps = {
   'zellij': 'Zellij',
   'gh': 'GitHub CLI',
   'lazygit': 'lazygit',
+  'zig': 'Zig',
 };
 
 /**
@@ -44,19 +45,6 @@ if (os === 'linux') {
   deps = { ...deps, ...linuxDeps };
 } else if (os === 'mac') {
   deps = { ...deps, ...macDeps };
-}
-
-// Check if running on Linux and need root access
-if (os === 'linux') {
-  try {
-    // Check if we can use sudo without password prompt
-    execSync('sudo -n true', { stdio: 'ignore' });
-    console.log('✓ Sudo access verified');
-  } catch (error) {
-    console.error('\n❌ This script requires sudo privileges to install dependencies on Linux.');
-    console.error('Please run: sudo -v');
-    process.exit(1);
-  }
 }
 
 // Check dependencies

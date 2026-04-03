@@ -7,12 +7,14 @@ import { join } from 'path';
  * Executes a shell command and logs the result
  * @param {string} command - The shell command to execute
  * @param {string} description - Human-readable description of the command
+ * @param {boolean} needsSudo - Whether the command needs sudo privileges
  * @returns {boolean} True if the command succeeded, false otherwise
  */
-function runCommand(command, description) {
+function runCommand(command, description, needsSudo = false) {
   console.log(`\n${description}...`);
   try {
-    execSync(command, { stdio: 'inherit', shell: '/bin/bash' });
+    const finalCommand = needsSudo ? `sudo ${command}` : command;
+    execSync(finalCommand, { stdio: 'inherit', shell: '/bin/bash' });
     console.log(`✓ ${description} completed`);
     return true;
   } catch (error) {
@@ -28,7 +30,7 @@ function runCommand(command, description) {
 async function installCurl() {
   console.log('\n📦 Installing curl...');
 
-  if (!runCommand('sudo apt install -y curl', 'Installing curl via apt')) {
+  if (!runCommand('apt install -y curl', 'Installing curl via apt', true)) {
     return false;
   }
 
@@ -43,7 +45,7 @@ async function installCurl() {
 async function installUnzip() {
   console.log('\n📦 Installing unzip...');
 
-  if (!runCommand('sudo apt install -y unzip', 'Installing unzip via apt')) {
+  if (!runCommand('apt install -y unzip', 'Installing unzip via apt', true)) {
     return false;
   }
 
@@ -112,7 +114,7 @@ async function installNvim() {
 async function installGo() {
   console.log('\n📦 Installing Go...');
 
-  if (!runCommand('sudo apt install -y golang', 'Installing Go via apt')) {
+  if (!runCommand('apt install -y golang', 'Installing Go via apt', true)) {
     return false;
   }
 
@@ -145,7 +147,7 @@ async function installRust() {
 async function installAlacritty() {
   console.log('\n📦 Installing Alacritty...');
 
-  if (!runCommand('sudo apt install -y alacritty', 'Installing Alacritty via apt')) {
+  if (!runCommand('apt install -y alacritty', 'Installing Alacritty via apt', true)) {
     return false;
   }
 
@@ -177,7 +179,7 @@ async function installZellij() {
 async function installPodman() {
   console.log('\n📦 Installing Podman...');
 
-  if (!runCommand('sudo apt-get install -y podman', 'Installing Podman via apt-get')) {
+  if (!runCommand('apt-get install -y podman', 'Installing Podman via apt-get', true)) {
     return false;
   }
 
@@ -193,34 +195,34 @@ async function installGh() {
   console.log('\n📦 Installing GitHub CLI...');
 
   // Ensure wget is installed
-  if (!runCommand('type -p wget >/dev/null || (sudo apt update && sudo apt install wget -y)', 'Ensuring wget is installed')) {
+  if (!runCommand('type -p wget >/dev/null || (apt update && apt install wget -y)', 'Ensuring wget is installed', true)) {
     return false;
   }
 
   // Create keyring directory
-  if (!runCommand('sudo mkdir -p -m 755 /etc/apt/keyrings', 'Creating keyring directory')) {
+  if (!runCommand('mkdir -p -m 755 /etc/apt/keyrings', 'Creating keyring directory', true)) {
     return false;
   }
 
   // Download and install GitHub CLI keyring
-  const downloadKeyring = `out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
-  if (!runCommand(downloadKeyring, 'Downloading and installing GitHub CLI keyring')) {
+  const downloadKeyring = `out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
+  if (!runCommand(downloadKeyring, 'Downloading and installing GitHub CLI keyring', true)) {
     return false;
   }
 
   // Create sources.list.d directory
-  if (!runCommand('sudo mkdir -p -m 755 /etc/apt/sources.list.d', 'Creating sources.list.d directory')) {
+  if (!runCommand('mkdir -p -m 755 /etc/apt/sources.list.d', 'Creating sources.list.d directory', true)) {
     return false;
   }
 
   // Add GitHub CLI repository
-  const addRepo = `echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null`;
-  if (!runCommand(addRepo, 'Adding GitHub CLI repository')) {
+  const addRepo = `echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null`;
+  if (!runCommand(addRepo, 'Adding GitHub CLI repository', true)) {
     return false;
   }
 
   // Update apt and install gh
-  if (!runCommand('sudo apt update && sudo apt install gh -y', 'Installing GitHub CLI')) {
+  if (!runCommand('apt update && apt install gh -y', 'Installing GitHub CLI', true)) {
     return false;
   }
 
@@ -235,11 +237,111 @@ async function installGh() {
 async function installLazygit() {
   console.log('\n📦 Installing lazygit...');
 
-  if (!runCommand('sudo apt install -y lazygit', 'Installing lazygit via apt')) {
+  if (!runCommand('apt install -y lazygit', 'Installing lazygit via apt', true)) {
     return false;
   }
 
   console.log('✓ lazygit installed successfully');
+  return true;
+}
+
+/**
+ * Zig version - locked to 0.15.2
+ * @type {string}
+ */
+const ZIG_VERSION = '0.15.2';
+
+/**
+ * Installs Zig programming language by downloading the prebuilt archive from ziglang.org
+ * @returns {Promise<boolean>} True if installation succeeded, false otherwise
+ */
+async function installZig() {
+  console.log(`\n📦 Installing Zig ${ZIG_VERSION}...`);
+
+  const zigDir = join(homedir(), '.local');
+  if (!existsSync(zigDir)) {
+    mkdirSync(zigDir, { recursive: true });
+  }
+
+  // Detect architecture
+  const arch = execSync('uname -m', { encoding: 'utf-8' }).trim();
+  let archName;
+  if (arch === 'x86_64') {
+    archName = 'x86_64';
+  } else if (arch === 'aarch64') {
+    archName = 'aarch64';
+  } else {
+    console.error(`✗ Unsupported architecture for Zig: ${arch}`);
+    return false;
+  }
+
+  console.log(`Detected architecture: ${arch}`);
+
+  const tarballName = `zig-${archName}-linux-${ZIG_VERSION}.tar.xz`;
+  const downloadUrl = `https://ziglang.org/download/${ZIG_VERSION}/${tarballName}`;
+  const tempDir = join(homedir(), '.cache', 'dotenv-install');
+  const tarballPath = join(tempDir, tarballName);
+
+  // Create temp directory
+  if (!existsSync(tempDir)) {
+    mkdirSync(tempDir, { recursive: true });
+  }
+
+  // Download tarball
+  const downloadCmd = `curl -fsSL -o ${tarballPath} ${downloadUrl}`;
+  if (!runCommand(downloadCmd, `Downloading Zig ${ZIG_VERSION}`)) {
+    return false;
+  }
+
+  // Extract tarball
+  const extractCmd = `tar -xf ${tarballPath} -C ${zigDir}`;
+  if (!runCommand(extractCmd, 'Extracting Zig archive')) {
+    return false;
+  }
+
+  // Create symlink
+  const extractedDir = join(zigDir, `zig-${archName}-linux-${ZIG_VERSION}`);
+  const binPath = join(extractedDir, 'zig');
+  const symlinkPath = join(zigDir, 'bin', 'zig');
+
+  // Ensure bin directory exists
+  const binDir = join(zigDir, 'bin');
+  if (!existsSync(binDir)) {
+    mkdirSync(binDir, { recursive: true });
+  }
+
+  // Remove old symlink if exists
+  if (existsSync(symlinkPath)) {
+    try {
+      execSync(`rm ${symlinkPath}`);
+    } catch (error) {
+      console.error('✗ Failed to remove old zig symlink:', error.message);
+    }
+  }
+
+  // Create new symlink
+  try {
+    execSync(`ln -s ${binPath} ${symlinkPath}`);
+    console.log('✓ Created zig symlink');
+  } catch (error) {
+    console.error('✗ Failed to create zig symlink:', error.message);
+    return false;
+  }
+
+  // Cleanup tarball
+  try {
+    execSync(`rm ${tarballPath}`);
+    console.log('✓ Cleaned up tarball');
+  } catch (error) {
+    // Non-fatal error
+    console.log('⚠ Could not cleanup tarball');
+  }
+
+  console.log(`✓ Zig ${ZIG_VERSION} installed successfully
+  Location: ${extractedDir}
+  Binary: ${symlinkPath}
+  Make sure ${binDir} is in your PATH`);
+
   return true;
 }
 
@@ -256,10 +358,10 @@ Starting Linux dependency installation
 
   // First run apt update
   console.log('\n📋 Updating package lists...');
-  if (!runCommand('sudo apt update', 'Running apt update')) {
+  if (!runCommand('apt update', 'Running apt update', true)) {
     console.error('⚠ Warning: apt update failed, but continuing...');
   }
-  if (!runCommand('sudo apt-get update', 'Running apt-get update')) {
+  if (!runCommand('apt-get update', 'Running apt-get update', true)) {
     console.error('⚠ Warning: apt-get update failed, but continuing...');
   }
 
@@ -325,6 +427,12 @@ Starting Linux dependency installation
     installResults.lazygit = await installLazygit();
   } else {
     console.log('\n✓ lazygit is already installed');
+  }
+
+  if (!details.zig) {
+    installResults.zig = await installZig();
+  } else {
+    console.log('\n✓ Zig is already installed');
   }
 
   // Summary

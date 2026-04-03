@@ -1,4 +1,7 @@
 import { execSync } from 'child_process';
+import { existsSync, mkdirSync } from 'fs';
+import { homedir } from 'os';
+import { join } from 'path';
 
 /**
  * Executes a shell command and logs the result
@@ -187,6 +190,106 @@ async function installLazygit() {
 }
 
 /**
+ * Zig version - locked to 0.15.2
+ * @type {string}
+ */
+const ZIG_VERSION = '0.15.2';
+
+/**
+ * Installs Zig programming language by downloading the prebuilt archive from ziglang.org
+ * @returns {Promise<boolean>} True if installation succeeded, false otherwise
+ */
+async function installZig() {
+  console.log(`\n📦 Installing Zig ${ZIG_VERSION}...`);
+
+  const zigDir = join(homedir(), '.local');
+  if (!existsSync(zigDir)) {
+    mkdirSync(zigDir, { recursive: true });
+  }
+
+  // Detect architecture
+  const arch = execSync('uname -m', { encoding: 'utf-8' }).trim();
+  let archName;
+  if (arch === 'x86_64') {
+    archName = 'x86_64';
+  } else if (arch === 'arm64') {
+    archName = 'aarch64';
+  } else {
+    console.error(`✗ Unsupported architecture for Zig: ${arch}`);
+    return false;
+  }
+
+  console.log(`Detected architecture: ${arch}`);
+
+  const tarballName = `zig-${archName}-macos-${ZIG_VERSION}.tar.xz`;
+  const downloadUrl = `https://ziglang.org/download/${ZIG_VERSION}/${tarballName}`;
+  const tempDir = join(homedir(), '.cache', 'dotenv-install');
+  const tarballPath = join(tempDir, tarballName);
+
+  // Create temp directory
+  if (!existsSync(tempDir)) {
+    mkdirSync(tempDir, { recursive: true });
+  }
+
+  // Download tarball
+  const downloadCmd = `curl -fsSL -o ${tarballPath} ${downloadUrl}`;
+  if (!runCommand(downloadCmd, `Downloading Zig ${ZIG_VERSION}`)) {
+    return false;
+  }
+
+  // Extract tarball
+  const extractCmd = `tar -xf ${tarballPath} -C ${zigDir}`;
+  if (!runCommand(extractCmd, 'Extracting Zig archive')) {
+    return false;
+  }
+
+  // Create symlink
+  const extractedDir = join(zigDir, `zig-${archName}-macos-${ZIG_VERSION}`);
+  const binPath = join(extractedDir, 'zig');
+  const symlinkPath = join(zigDir, 'bin', 'zig');
+
+  // Ensure bin directory exists
+  const binDir = join(zigDir, 'bin');
+  if (!existsSync(binDir)) {
+    mkdirSync(binDir, { recursive: true });
+  }
+
+  // Remove old symlink if exists
+  if (existsSync(symlinkPath)) {
+    try {
+      execSync(`rm ${symlinkPath}`);
+    } catch (error) {
+      console.error('✗ Failed to remove old zig symlink:', error.message);
+    }
+  }
+
+  // Create new symlink
+  try {
+    execSync(`ln -s ${binPath} ${symlinkPath}`);
+    console.log('✓ Created zig symlink');
+  } catch (error) {
+    console.error('✗ Failed to create zig symlink:', error.message);
+    return false;
+  }
+
+  // Cleanup tarball
+  try {
+    execSync(`rm ${tarballPath}`);
+    console.log('✓ Cleaned up tarball');
+  } catch (error) {
+    // Non-fatal error
+    console.log('⚠ Could not cleanup tarball');
+  }
+
+  console.log(`✓ Zig ${ZIG_VERSION} installed successfully
+  Location: ${extractedDir}
+  Binary: ${symlinkPath}
+  Make sure ${binDir} is in your PATH`);
+
+  return true;
+}
+
+/**
  * Installs missing dependencies on macOS systems
  * @param {import('./check_deps.mjs').CheckDepsResult} result - The result from checkDeps function
  * @returns {Promise<void>}
@@ -279,6 +382,12 @@ Starting macOS dependency installation
     installResults.lazygit = await installLazygit();
   } else {
     console.log('\n✓ lazygit is already installed');
+  }
+
+  if (!details.zig) {
+    installResults.zig = await installZig();
+  } else {
+    console.log('\n✓ Zig is already installed');
   }
 
   // Summary
