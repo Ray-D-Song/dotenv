@@ -2,6 +2,7 @@ local gopls_config_fn = require('lsp.go')
 local jsts_config_fn = require('lsp.js-ts')
 local sql_config_fn = require('lsp.sql')
 local c_config_fn = require('lsp.c')
+local zig_config_fn = require('lsp.zig')
 
 -- Track if we were in a quickfix window
 local was_in_qf = false
@@ -95,14 +96,14 @@ return {
         ensure_installed = {
           'lua_ls', 'clangd', 'pyright', 'rust_analyzer',
           'eslint', 'ts_ls', 'intelephense',
-          'gopls'
+          'gopls', 'zls'
         },
       })
 
       -- Configure LSP servers using vim.lsp.config (new API)
       local servers = {
         'lua_ls', 'clangd', 'pyright', 'rust_analyzer',
-        'eslint', 'intelephense', 'tailwindcss-language-server', 'ts_ls'
+        'eslint', 'intelephense', 'tailwindcss-language-server', 'ts_ls', 'zls'
       }
 
       for _, server in ipairs(servers) do
@@ -118,6 +119,7 @@ return {
       jsts_config_fn(capabilities, on_attach)
       sql_config_fn(capabilities, on_attach)
       c_config_fn(capabilities, on_attach)
+      zig_config_fn(capabilities, on_attach)
     end,
   },
   {

@@ -93,6 +93,7 @@ vim.keymap.set('n', 'sa', function()
   vim.cmd('w')
 end)                                                            -- Save file
 vim.keymap.set('n', 'wq', ':wq<CR>')                            -- Save and close file
+vim.keymap.set('n', 'lf', ':edit!<CR>')                        -- Reload file from disk (force, discard changes)
 vim.keymap.set('n', 'qf', ':lua vim.lsp.buf.code_action()<CR>') -- Show LSP quick fix suggestions
 vim.keymap.set('n', 'gd', ':lua vim.lsp.buf.definition()<CR>')  -- Go to definition
 vim.keymap.set('n', 'sd', function()
