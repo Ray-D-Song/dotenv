@@ -63,12 +63,30 @@ async function installNvim() {
     mkdirSync(nvimDir, { recursive: true });
   }
 
+  // Detect architecture
+  const arch = execSync('uname -m', { encoding: 'utf-8' }).trim();
+  let appimageName;
+  if (arch === 'x86_64') {
+    appimageName = 'nvim-linux-x86_64.appimage';
+  } else if (arch === 'aarch64') {
+    appimageName = 'nvim-linux-arm64.appimage';
+  } else {
+    console.error(`✗ Unsupported architecture: ${arch}`);
+    return false;
+  }
+
+  console.log(`Detected architecture: ${arch}`);
+
   // Download latest stable nvim appimage
   const nvimPath = join(nvimDir, 'nvim');
-  const downloadCmd = `curl -Lo ${nvimPath} https://github.com/neovim/neovim/releases/latest/download/nvim.appimage`;
+  const downloadCmd = `curl -fsSL -o ${nvimPath} https://github.com/neovim/neovim/releases/latest/download/${appimageName}`;
 
   if (!runCommand(downloadCmd, 'Downloading Neovim')) {
-    return false;
+    // Try alternative URL format
+    const altDownloadCmd = `curl -fsSL -o ${nvimPath} https://github.com/neovim/neovim/releases/download/stable/${appimageName}`;
+    if (!runCommand(altDownloadCmd, 'Trying alternative download URL')) {
+      return false;
+    }
   }
 
   // Make it executable

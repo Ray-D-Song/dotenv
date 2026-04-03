@@ -1,4 +1,8 @@
-.PHONY: install
+.PHONY: install update-nvim
+
+# Detect OS and Architecture
+UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
 
 # Default target: install everything
 install:
@@ -33,4 +37,47 @@ install:
 	@echo "========================================"
 	@echo "✓ Installation completed successfully!"
 	@echo "========================================"
+	@echo ""
+
+# Update Neovim to the latest version
+update-nvim:
+	@echo ""
+	@echo "========================================"
+	@echo "Updating Neovim..."
+	@echo "========================================"
+	@echo ""
+ifeq ($(UNAME_S),Linux)
+	@echo "Detected Linux - updating Neovim AppImage..."
+	@mkdir -p $(HOME)/.local/bin
+	@echo "Architecture: $(UNAME_M)"
+	@echo "Downloading latest Neovim AppImage..."
+ifeq ($(UNAME_M),x86_64)
+	@curl -fsSL -o $(HOME)/.local/bin/nvim https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage || \
+		(echo "❌ Primary download failed, trying alternative URL..." && \
+		curl -fsSL -o $(HOME)/.local/bin/nvim https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.appimage)
+else ifeq ($(UNAME_M),aarch64)
+	@curl -fsSL -o $(HOME)/.local/bin/nvim https://github.com/neovim/neovim/releases/latest/download/nvim-linux-arm64.appimage || \
+		(echo "❌ Primary download failed, trying alternative URL..." && \
+		curl -fsSL -o $(HOME)/.local/bin/nvim https://github.com/neovim/neovim/releases/download/stable/nvim-linux-arm64.appimage)
+else
+	@echo "❌ Unsupported architecture: $(UNAME_M)"
+	@exit 1
+endif
+	@chmod 755 $(HOME)/.local/bin/nvim
+	@echo ""
+	@echo "✓ Neovim updated successfully!"
+	@echo "Location: $(HOME)/.local/bin/nvim"
+	@echo "Version:"
+	@$(HOME)/.local/bin/nvim --version | head -1
+else ifeq ($(UNAME_S),Darwin)
+	@echo "Detected macOS - updating Neovim via Homebrew..."
+	@brew upgrade neovim
+	@echo ""
+	@echo "✓ Neovim updated successfully!"
+	@echo "Version:"
+	@nvim --version | head -1
+else
+	@echo "❌ Unsupported operating system: $(UNAME_S)"
+	@exit 1
+endif
 	@echo ""
