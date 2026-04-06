@@ -19,6 +19,7 @@ const commonDeps = {
   'gh': 'GitHub CLI',
   'lazygit': 'lazygit',
   'zig': 'Zig',
+  'thorium-browser': 'Thorium Browser',
 };
 
 /**

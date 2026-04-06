@@ -431,6 +431,47 @@ async function installZig() {
 }
 
 /**
+ * Installs Thorium Browser
+ * @returns {Promise<boolean>} True if installation succeeded, false otherwise
+ */
+async function installThorium() {
+  console.log('\n📦 Installing Thorium Browser...');
+
+  const distro = detectDistro();
+
+  if (distro === 'arch') {
+    if (!runCommand('pacman -S --noconfirm --needed git base-devel', 'Installing base-devel for AUR', true)) {
+      return false;
+    }
+
+    const installCmd = `mkdir -p ~/aur && cd ~/aur && git clone https://aur.archlinux.org/thorium-browser-bin.git && cd thorium-browser-bin && makepkg -si --noconfirm`;
+    if (!runCommand(installCmd, 'Installing Thorium Browser from AUR')) {
+      return false;
+    }
+  } else {
+    if (!runCommand('type -p wget >/dev/null || (apt update && apt install wget -y)', 'Ensuring wget is installed', true)) {
+      return false;
+    }
+
+    const addRepo = `sudo rm -fv /etc/apt/sources.list.d/thorium.list && sudo wget --no-hsts -P /etc/apt/sources.list.d/ http://dl.thorium.rocks/debian/dists/stable/thorium.list`;
+    if (!runCommand(addRepo, 'Adding Thorium repository', true)) {
+      return false;
+    }
+
+    if (!runCommand('apt update', 'Updating package lists', true)) {
+      return false;
+    }
+
+    if (!runCommand('apt install -y thorium-browser', 'Installing Thorium Browser', true)) {
+      return false;
+    }
+  }
+
+  console.log('✓ Thorium Browser installed successfully');
+  return true;
+}
+
+/**
  * Installs missing dependencies on Linux systems
  * @param {import('./check_deps.mjs').CheckDepsResult} result - The result from checkDeps function
  * @returns {Promise<void>}
@@ -524,6 +565,12 @@ Starting Linux dependency installation
     installResults.zig = await installZig();
   } else {
     console.log('\n✓ Zig is already installed');
+  }
+
+  if (!details['thorium-browser']) {
+    installResults['thorium-browser'] = await installThorium();
+  } else {
+    console.log('\n✓ Thorium Browser is already installed');
   }
 
   // Summary
