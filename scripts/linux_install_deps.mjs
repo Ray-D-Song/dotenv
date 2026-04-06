@@ -1,15 +1,79 @@
 import { execSync } from 'child_process';
-import { existsSync, mkdirSync, chmodSync } from 'fs';
+import { existsSync, mkdirSync, chmodSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 
-/**
- * Executes a shell command and logs the result
- * @param {string} command - The shell command to execute
- * @param {string} description - Human-readable description of the command
- * @param {boolean} needsSudo - Whether the command needs sudo privileges
- * @returns {boolean} True if the command succeeded, false otherwise
- */
+let detectedDistro = null;
+
+function detectDistro() {
+  if (detectedDistro) return detectedDistro;
+
+  try {
+    const osRelease = readFileSync('/etc/os-release', 'utf-8');
+    const lines = osRelease.split('\n');
+    const info = {};
+
+    lines.forEach(line => {
+      const [key, value] = line.split('=');
+      if (key && value) {
+        info[key] = value.replace(/^["']|["']$/g, '');
+      }
+    });
+
+    const id = info.ID || '';
+    const idLike = info.ID_LIKE || '';
+
+    if (id === 'debian' || id === 'ubuntu' || idLike.includes('debian')) {
+      detectedDistro = 'debian';
+    } else if (id === 'arch' || id === 'manjaro' || idLike.includes('arch')) {
+      detectedDistro = 'arch';
+    } else {
+      detectedDistro = 'unknown';
+    }
+
+    return detectedDistro;
+  } catch (error) {
+    console.error('✗ Failed to detect distribution:', error.message);
+    detectedDistro = 'unknown';
+    return detectedDistro;
+  }
+}
+
+function getPackageManager() {
+  const distro = detectDistro();
+
+  const managers = {
+    debian: {
+      update: 'apt update',
+      install: 'apt install -y',
+      query: 'dpkg -l',
+    },
+    arch: {
+      update: 'pacman -Sy',
+      install: 'pacman -S --noconfirm',
+      query: 'pacman -Q',
+    },
+  };
+
+  return managers[distro] || managers.debian;
+}
+
+function getPackageName(packageName) {
+  const distro = detectDistro();
+
+  const packageMap = {
+    curl: { debian: 'curl', arch: 'curl' },
+    unzip: { debian: 'unzip', arch: 'unzip' },
+    golang: { debian: 'golang', arch: 'go' },
+    alacritty: { debian: 'alacritty', arch: 'alacritty' },
+    podman: { debian: 'podman', arch: 'podman' },
+    lazygit: { debian: 'lazygit', arch: 'lazygit' },
+    wget: { debian: 'wget', arch: 'wget' },
+  };
+
+  return packageMap[packageName]?.[distro] || packageName;
+}
+
 function runCommand(command, description, needsSudo = false) {
   console.log(`\n${description}...`);
   try {
@@ -24,13 +88,16 @@ function runCommand(command, description, needsSudo = false) {
 }
 
 /**
- * Installs curl via apt package manager
+ * Installs curl via package manager
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
 async function installCurl() {
   console.log('\n📦 Installing curl...');
 
-  if (!runCommand('apt install -y curl', 'Installing curl via apt', true)) {
+  const pm = getPackageManager();
+  const pkg = getPackageName('curl');
+
+  if (!runCommand(`${pm.install} ${pkg}`, `Installing ${pkg}`, true)) {
     return false;
   }
 
@@ -39,13 +106,16 @@ async function installCurl() {
 }
 
 /**
- * Installs unzip via apt package manager
+ * Installs unzip via package manager
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
 async function installUnzip() {
   console.log('\n📦 Installing unzip...');
 
-  if (!runCommand('apt install -y unzip', 'Installing unzip via apt', true)) {
+  const pm = getPackageManager();
+  const pkg = getPackageName('unzip');
+
+  if (!runCommand(`${pm.install} ${pkg}`, `Installing ${pkg}`, true)) {
     return false;
   }
 
@@ -108,13 +178,16 @@ async function installNvim() {
 }
 
 /**
- * Installs Go programming language via apt package manager
+ * Installs Go programming language via package manager
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
 async function installGo() {
   console.log('\n📦 Installing Go...');
 
-  if (!runCommand('apt install -y golang', 'Installing Go via apt', true)) {
+  const pm = getPackageManager();
+  const pkg = getPackageName('golang');
+
+  if (!runCommand(`${pm.install} ${pkg}`, `Installing ${pkg}`, true)) {
     return false;
   }
 
@@ -141,13 +214,16 @@ async function installRust() {
 }
 
 /**
- * Installs Alacritty terminal emulator via apt package manager
+ * Installs Alacritty terminal emulator via package manager
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
 async function installAlacritty() {
   console.log('\n📦 Installing Alacritty...');
 
-  if (!runCommand('apt install -y alacritty', 'Installing Alacritty via apt', true)) {
+  const pm = getPackageManager();
+  const pkg = getPackageName('alacritty');
+
+  if (!runCommand(`${pm.install} ${pkg}`, `Installing ${pkg}`, true)) {
     return false;
   }
 
@@ -173,13 +249,16 @@ async function installZellij() {
 }
 
 /**
- * Installs Podman container engine via apt package manager
+ * Installs Podman container engine via package manager
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
 async function installPodman() {
   console.log('\n📦 Installing Podman...');
 
-  if (!runCommand('apt-get install -y podman', 'Installing Podman via apt-get', true)) {
+  const pm = getPackageManager();
+  const pkg = getPackageName('podman');
+
+  if (!runCommand(`${pm.install} ${pkg}`, `Installing ${pkg}`, true)) {
     return false;
   }
 
@@ -188,42 +267,45 @@ async function installPodman() {
 }
 
 /**
- * Installs GitHub CLI (gh) by adding the official repository and installing via apt
+ * Installs GitHub CLI (gh) via package manager
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
 async function installGh() {
   console.log('\n📦 Installing GitHub CLI...');
 
-  // Ensure wget is installed
-  if (!runCommand('type -p wget >/dev/null || (apt update && apt install wget -y)', 'Ensuring wget is installed', true)) {
-    return false;
-  }
+  const distro = detectDistro();
+  const pm = getPackageManager();
 
-  // Create keyring directory
-  if (!runCommand('mkdir -p -m 755 /etc/apt/keyrings', 'Creating keyring directory', true)) {
-    return false;
-  }
+  if (distro === 'arch') {
+    if (!runCommand(`${pm.install} github-cli`, 'Installing GitHub CLI', true)) {
+      return false;
+    }
+  } else {
+    if (!runCommand('type -p wget >/dev/null || (apt update && apt install wget -y)', 'Ensuring wget is installed', true)) {
+      return false;
+    }
 
-  // Download and install GitHub CLI keyring
-  const downloadKeyring = `out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
-  if (!runCommand(downloadKeyring, 'Downloading and installing GitHub CLI keyring', true)) {
-    return false;
-  }
+    if (!runCommand('mkdir -p -m 755 /etc/apt/keyrings', 'Creating keyring directory', true)) {
+      return false;
+    }
 
-  // Create sources.list.d directory
-  if (!runCommand('mkdir -p -m 755 /etc/apt/sources.list.d', 'Creating sources.list.d directory', true)) {
-    return false;
-  }
+    const downloadKeyring = `out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
+    if (!runCommand(downloadKeyring, 'Downloading and installing GitHub CLI keyring', true)) {
+      return false;
+    }
 
-  // Add GitHub CLI repository
-  const addRepo = `echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null`;
-  if (!runCommand(addRepo, 'Adding GitHub CLI repository', true)) {
-    return false;
-  }
+    if (!runCommand('mkdir -p -m 755 /etc/apt/sources.list.d', 'Creating sources.list.d directory', true)) {
+      return false;
+    }
 
-  // Update apt and install gh
-  if (!runCommand('apt update && apt install gh -y', 'Installing GitHub CLI', true)) {
-    return false;
+    const addRepo = `echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null`;
+    if (!runCommand(addRepo, 'Adding GitHub CLI repository', true)) {
+      return false;
+    }
+
+    if (!runCommand('apt update && apt install gh -y', 'Installing GitHub CLI', true)) {
+      return false;
+    }
   }
 
   console.log('✓ GitHub CLI installed successfully');
@@ -231,13 +313,16 @@ async function installGh() {
 }
 
 /**
- * Installs lazygit via apt package manager
+ * Installs lazygit via package manager
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
 async function installLazygit() {
   console.log('\n📦 Installing lazygit...');
 
-  if (!runCommand('apt install -y lazygit', 'Installing lazygit via apt', true)) {
+  const pm = getPackageManager();
+  const pkg = getPackageName('lazygit');
+
+  if (!runCommand(`${pm.install} ${pkg}`, `Installing ${pkg}`, true)) {
     return false;
   }
 
@@ -356,13 +441,19 @@ export async function linuxInstallDeps(result) {
 Starting Linux dependency installation
 ========================================`);
 
-  // First run apt update
-  console.log('\n📋 Updating package lists...');
-  if (!runCommand('apt update', 'Running apt update', true)) {
-    console.error('⚠ Warning: apt update failed, but continuing...');
+  const distro = detectDistro();
+  console.log(`\n📋 Detected distribution: ${distro}`);
+
+  if (distro === 'unknown') {
+    console.error('✗ Unsupported distribution. Only Debian and Arch are currently supported.');
+    console.error('  Supported distributions: Debian, Ubuntu, Arch, Manjaro');
+    return;
   }
-  if (!runCommand('apt-get update', 'Running apt-get update', true)) {
-    console.error('⚠ Warning: apt-get update failed, but continuing...');
+
+  const pm = getPackageManager();
+  console.log('\n📋 Updating package lists...');
+  if (!runCommand(pm.update, 'Updating package lists', true)) {
+    console.error('⚠ Warning: package update failed, but continuing...');
   }
 
   const { details } = result;
