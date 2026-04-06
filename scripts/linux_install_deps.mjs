@@ -77,7 +77,8 @@ function getPackageName(packageName) {
 function runCommand(command, description, needsSudo = false) {
   console.log(`\n${description}...`);
   try {
-    const finalCommand = needsSudo ? `sudo ${command}` : command;
+    // Wrap with "sudo bash -c" so that &&-chained sub-commands also run as root
+    const finalCommand = needsSudo ? `sudo bash -c '${command.replace(/'/g, "'\\''")}'` : command;
     execSync(finalCommand, { stdio: 'inherit', shell: '/bin/bash' });
     console.log(`✓ ${description} completed`);
     return true;
@@ -281,8 +282,12 @@ async function installGh() {
       return false;
     }
   } else {
-    if (!runCommand('type -p wget >/dev/null || (apt update && apt install wget -y)', 'Ensuring wget is installed', true)) {
-      return false;
+    try {
+      execSync('which wget', { encoding: 'utf-8' });
+    } catch {
+      if (!runCommand('apt update && apt install -y wget', 'Installing wget', true)) {
+        return false;
+      }
     }
 
     if (!runCommand('mkdir -p -m 755 /etc/apt/keyrings', 'Creating keyring directory', true)) {
@@ -431,6 +436,60 @@ async function installZig() {
 }
 
 /**
+ * Installs Visual Studio Code
+ * Debian: adds Microsoft apt repository; Arch: installs visual-studio-code-bin from AUR
+ * @returns {Promise<boolean>} True if installation succeeded, false otherwise
+ */
+async function installVSCode() {
+  console.log('\n📦 Installing Visual Studio Code...');
+
+  const distro = detectDistro();
+
+  if (distro === 'arch') {
+    if (!runCommand('pacman -S --noconfirm --needed git base-devel', 'Installing base-devel for AUR', true)) {
+      return false;
+    }
+
+    const installCmd = `mkdir -p ~/aur && cd ~/aur && git clone https://aur.archlinux.org/visual-studio-code-bin.git && cd visual-studio-code-bin && makepkg -si --noconfirm`;
+    if (!runCommand(installCmd, 'Installing VSCode from AUR')) {
+      return false;
+    }
+  } else {
+    // Ensure wget is installed (check without sudo, install with sudo only if missing)
+    try {
+      execSync('which wget', { encoding: 'utf-8' });
+    } catch {
+      if (!runCommand('apt update && apt install -y wget', 'Installing wget', true)) {
+        return false;
+      }
+    }
+
+    if (!runCommand('mkdir -p -m 755 /etc/apt/keyrings', 'Creating keyring directory', true)) {
+      return false;
+    }
+
+    // Download GPG key
+    const downloadKeyring = `wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /etc/apt/keyrings/packages.microsoft.gpg > /dev/null`;
+    if (!runCommand(downloadKeyring, 'Downloading and installing Microsoft GPG key', true)) {
+      return false;
+    }
+
+    // Add repository
+    const addRepo = `echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | tee /etc/apt/sources.list.d/vscode.list > /dev/null`;
+    if (!runCommand(addRepo, 'Adding VSCode repository', true)) {
+      return false;
+    }
+
+    if (!runCommand('apt update && apt install -y code', 'Installing VSCode', true)) {
+      return false;
+    }
+  }
+
+  console.log('✓ Visual Studio Code installed successfully');
+  return true;
+}
+
+/**
  * Installs Thorium Browser
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
@@ -449,11 +508,15 @@ async function installThorium() {
       return false;
     }
   } else {
-    if (!runCommand('type -p wget >/dev/null || (apt update && apt install wget -y)', 'Ensuring wget is installed', true)) {
-      return false;
+    try {
+      execSync('which wget', { encoding: 'utf-8' });
+    } catch {
+      if (!runCommand('apt update && apt install -y wget', 'Installing wget', true)) {
+        return false;
+      }
     }
 
-    const addRepo = `sudo rm -fv /etc/apt/sources.list.d/thorium.list && sudo wget --no-hsts -P /etc/apt/sources.list.d/ http://dl.thorium.rocks/debian/dists/stable/thorium.list`;
+    const addRepo = `rm -fv /etc/apt/sources.list.d/thorium.list && wget --no-hsts -P /etc/apt/sources.list.d/ http://dl.thorium.rocks/debian/dists/stable/thorium.list`;
     if (!runCommand(addRepo, 'Adding Thorium repository', true)) {
       return false;
     }
@@ -571,6 +634,12 @@ Starting Linux dependency installation
     installResults['thorium-browser'] = await installThorium();
   } else {
     console.log('\n✓ Thorium Browser is already installed');
+  }
+
+  if (!details.code) {
+    installResults.code = await installVSCode();
+  } else {
+    console.log('\n✓ Visual Studio Code is already installed');
   }
 
   // Summary

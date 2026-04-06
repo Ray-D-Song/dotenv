@@ -20,6 +20,7 @@ const commonDeps = {
   'lazygit': 'lazygit',
   'zig': 'Zig',
   'thorium-browser': 'Thorium Browser',
+  'code': 'VSCode',
 };
 
 /**
