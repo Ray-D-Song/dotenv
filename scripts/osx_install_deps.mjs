@@ -82,20 +82,37 @@ async function installGo() {
 }
 
 /**
- * Installs Rust programming language and Cargo via rustup
+ * Installs mise version manager via official install script
+ * @returns {Promise<boolean>} True if installation succeeded, false otherwise
+ */
+async function installMise() {
+  console.log('\n📦 Installing mise...');
+
+  const installCmd = `curl https://mise.run | sh`;
+
+  if (!runCommand(installCmd, 'Installing mise')) {
+    return false;
+  }
+
+  console.log('✓ mise installed successfully');
+  return true;
+}
+
+/**
+ * Installs Rust programming language and Cargo via mise
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
 async function installRust() {
   console.log('\n📦 Installing Rust...');
 
-  const installCmd = `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y`;
+  const misePath = join(homedir(), '.local', 'bin', 'mise');
+  const installCmd = `${misePath} use --global rust@latest`;
 
-  if (!runCommand(installCmd, 'Installing Rust via rustup')) {
+  if (!runCommand(installCmd, 'Installing Rust via mise')) {
     return false;
   }
 
-  console.log(`✓ Rust installed successfully
-  Run: source "$HOME/.cargo/env" to use Rust in this session`);
+  console.log('✓ Rust installed successfully');
   return true;
 }
 
@@ -196,96 +213,20 @@ async function installLazygit() {
 const ZIG_VERSION = '0.15.2';
 
 /**
- * Installs Zig programming language by downloading the prebuilt archive from ziglang.org
+ * Installs Zig programming language via mise
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
 async function installZig() {
   console.log(`\n📦 Installing Zig ${ZIG_VERSION}...`);
 
-  const zigDir = join(homedir(), '.local');
-  if (!existsSync(zigDir)) {
-    mkdirSync(zigDir, { recursive: true });
-  }
+  const misePath = join(homedir(), '.local', 'bin', 'mise');
+  const installCmd = `${misePath} use --global zig@${ZIG_VERSION}`;
 
-  // Detect architecture
-  const arch = execSync('uname -m', { encoding: 'utf-8' }).trim();
-  let archName;
-  if (arch === 'x86_64') {
-    archName = 'x86_64';
-  } else if (arch === 'arm64') {
-    archName = 'aarch64';
-  } else {
-    console.error(`✗ Unsupported architecture for Zig: ${arch}`);
+  if (!runCommand(installCmd, `Installing Zig ${ZIG_VERSION} via mise`)) {
     return false;
   }
 
-  console.log(`Detected architecture: ${arch}`);
-
-  const tarballName = `zig-${archName}-macos-${ZIG_VERSION}.tar.xz`;
-  const downloadUrl = `https://ziglang.org/download/${ZIG_VERSION}/${tarballName}`;
-  const tempDir = join(homedir(), '.cache', 'dotenv-install');
-  const tarballPath = join(tempDir, tarballName);
-
-  // Create temp directory
-  if (!existsSync(tempDir)) {
-    mkdirSync(tempDir, { recursive: true });
-  }
-
-  // Download tarball
-  const downloadCmd = `curl -fsSL -o ${tarballPath} ${downloadUrl}`;
-  if (!runCommand(downloadCmd, `Downloading Zig ${ZIG_VERSION}`)) {
-    return false;
-  }
-
-  // Extract tarball
-  const extractCmd = `tar -xf ${tarballPath} -C ${zigDir}`;
-  if (!runCommand(extractCmd, 'Extracting Zig archive')) {
-    return false;
-  }
-
-  // Create symlink
-  const extractedDir = join(zigDir, `zig-${archName}-macos-${ZIG_VERSION}`);
-  const binPath = join(extractedDir, 'zig');
-  const symlinkPath = join(zigDir, 'bin', 'zig');
-
-  // Ensure bin directory exists
-  const binDir = join(zigDir, 'bin');
-  if (!existsSync(binDir)) {
-    mkdirSync(binDir, { recursive: true });
-  }
-
-  // Remove old symlink if exists
-  if (existsSync(symlinkPath)) {
-    try {
-      execSync(`rm ${symlinkPath}`);
-    } catch (error) {
-      console.error('✗ Failed to remove old zig symlink:', error.message);
-    }
-  }
-
-  // Create new symlink
-  try {
-    execSync(`ln -s ${binPath} ${symlinkPath}`);
-    console.log('✓ Created zig symlink');
-  } catch (error) {
-    console.error('✗ Failed to create zig symlink:', error.message);
-    return false;
-  }
-
-  // Cleanup tarball
-  try {
-    execSync(`rm ${tarballPath}`);
-    console.log('✓ Cleaned up tarball');
-  } catch (error) {
-    // Non-fatal error
-    console.log('⚠ Could not cleanup tarball');
-  }
-
-  console.log(`✓ Zig ${ZIG_VERSION} installed successfully
-  Location: ${extractedDir}
-  Binary: ${symlinkPath}
-  Make sure ${binDir} is in your PATH`);
-
+  console.log(`✓ Zig ${ZIG_VERSION} installed successfully`);
   return true;
 }
 
@@ -352,6 +293,12 @@ Starting macOS dependency installation
     installResults.go = await installGo();
   } else {
     console.log('\n✓ Go is already installed');
+  }
+
+  if (!details.mise) {
+    installResults.mise = await installMise();
+  } else {
+    console.log('\n✓ mise is already installed');
   }
 
   if (!details.cargo) {

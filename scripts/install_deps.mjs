@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
  * Common dependencies shared across all platforms
  */
 const commonDeps = {
+  'mise': 'mise',
   'curl': 'curl',
   'unzip': 'unzip',
   'nvim': 'Neovim',
