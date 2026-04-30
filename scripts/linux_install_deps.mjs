@@ -67,6 +67,7 @@ function getPackageName(packageName) {
     golang: { debian: 'golang', arch: 'go' },
     alacritty: { debian: 'alacritty', arch: 'alacritty' },
     podman: { debian: 'podman', arch: 'podman' },
+    'podman-docker': { debian: 'podman-docker', arch: 'podman-docker' },
     lazygit: { debian: 'lazygit', arch: 'lazygit' },
     wget: { debian: 'wget', arch: 'wget' },
   };
@@ -275,8 +276,9 @@ async function installPodman() {
 
   const pm = getPackageManager();
   const pkg = getPackageName('podman');
+  const dockerPkg = getPackageName('podman-docker');
 
-  if (!runCommand(`${pm.install} ${pkg}`, `Installing ${pkg}`, true)) {
+  if (!runCommand(`${pm.install} ${pkg} ${dockerPkg}`, `Installing ${pkg} and ${dockerPkg}`, true)) {
     return false;
   }
 
