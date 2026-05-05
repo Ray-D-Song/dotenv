@@ -2,6 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync, mkdirSync, chmodSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
+import { currentOS, ensurePathInShellConfig } from './utils.mjs';
 
 let detectedDistro = null;
 
@@ -589,6 +590,12 @@ Starting Linux dependency installation
     installResults.code = await installVSCode();
   } else {
     console.log('\n✓ Visual Studio Code is already installed');
+  }
+
+  // Ensure ~/.local/bin is in PATH
+  const localBinDir = join(homedir(), '.local', 'bin');
+  if (ensurePathInShellConfig(localBinDir, currentOS())) {
+    console.log(`\n  ✓ Added ${localBinDir} to PATH in shell config`);
   }
 
   // Summary
