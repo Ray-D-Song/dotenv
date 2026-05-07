@@ -1,6 +1,7 @@
 import { platform, homedir } from 'os';
-import { existsSync, readFileSync, appendFileSync } from 'fs';
+import { existsSync, readFileSync, appendFileSync, symlinkSync, chmodSync } from 'fs';
 import { join } from 'path';
+import { execSync } from 'child_process';
 
 /**
  * @typedef {'mac' | 'linux' | 'windows' | 'unknown'} OSType
@@ -23,6 +24,27 @@ export function currentOS() {
     default:
       return 'unknown';
   }
+}
+
+/**
+ * Detects whether we're running inside WSL2
+ * @returns {boolean} True if running inside WSL2
+ */
+export function isWSL2() {
+  if (currentOS() !== 'linux') return false;
+
+  try {
+    const procVersion = readFileSync('/proc/version', 'utf-8').toLowerCase();
+    if (procVersion.includes('microsoft') || procVersion.includes('wsl')) {
+      return true;
+    }
+  } catch {}
+
+  if (existsSync('/proc/sys/fs/binfmt_misc/WSLInterop')) {
+    return true;
+  }
+
+  return false;
 }
 
 /**

@@ -12,6 +12,7 @@ const projectRoot = resolve(__dirname, '..');
  * @typedef {Object} ConfigMapping
  * @property {string} source - Source path in the project
  * @property {string} target - Target path in the system config directory
+ * @property {'dir'|'file'} [type] - Type of symlink ('dir' for directories, 'file' for single files). Defaults to 'dir'.
  */
 
 /**
@@ -51,6 +52,11 @@ function getConfigMappings(os) {
     {
       source: join(projectRoot, 'zellij'),
       target: join(configDir, 'zellij')
+    },
+    {
+      source: join(projectRoot, 'tmux', 'tmux.conf'),
+      target: join(homedir(), '.tmux.conf'),
+      type: 'file'
     }
   ];
 }
@@ -84,10 +90,11 @@ function backupPath(path) {
  * Creates a symlink from source to target
  * @param {string} source - Source path
  * @param {string} target - Target path
+ * @param {'dir'|'file'} [type='dir'] - Type of symlink
  */
-function createSymlink(source, target) {
+function createSymlink(source, target, type = 'dir') {
   console.log(`  🔗 Creating symlink: ${target} -> ${source}`);
-  symlinkSync(source, target, 'dir');
+  symlinkSync(source, target, type);
   console.log(`  ✓ Symlink created successfully`);
 }
 
@@ -114,7 +121,7 @@ Creating Configuration Symlinks
   let createdCount = 0;
   let skippedCount = 0;
 
-  for (const { source, target } of mappings) {
+  for (const { source, target, type = 'dir' } of mappings) {
     const configName = dirname(target) === configDir ? target.split('/').pop() : target.split('/').pop();
 
     console.log(`\n📝 Processing ${configName} config...`);
@@ -139,7 +146,7 @@ Creating Configuration Symlinks
     }
 
     // Create symlink
-    createSymlink(source, target);
+    createSymlink(source, target, type);
     createdCount++;
   }
 

@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync, mkdirSync, chmodSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import { currentOS, ensurePathInShellConfig } from './utils.mjs';
+import { currentOS, ensurePathInShellConfig, isWSL2 } from './utils.mjs';
 
 let detectedDistro = null;
 
@@ -71,6 +71,8 @@ function getPackageName(packageName) {
     'podman-docker': { debian: 'podman-docker', arch: 'podman-docker' },
     lazygit: { debian: 'lazygit', arch: 'lazygit' },
     wget: { debian: 'wget', arch: 'wget' },
+    xclip: { debian: 'xclip', arch: 'xclip' },
+    'wl-clipboard': { debian: 'wl-clipboard', arch: 'wl-clipboard' },
   };
 
   return packageMap[packageName]?.[distro] || packageName;
@@ -479,6 +481,92 @@ async function installThorium() {
 }
 
 /**
+ * Installs xclip (X11 clipboard tool)
+ * @returns {Promise<boolean>} True if installation succeeded, false otherwise
+ */
+async function installXclip() {
+  console.log('\n📦 Installing xclip...');
+
+  const pm = getPackageManager();
+  const pkg = getPackageName('xclip');
+
+  if (!runCommand(`${pm.install} ${pkg}`, `Installing ${pkg}`, true)) {
+    return false;
+  }
+
+  console.log('✓ xclip installed successfully');
+  return true;
+}
+
+/**
+ * Installs wl-clipboard (Wayland clipboard tool)
+ * @returns {Promise<boolean>} True if installation succeeded, false otherwise
+ */
+async function installWlClipboard() {
+  console.log('\n📦 Installing wl-clipboard...');
+
+  const pm = getPackageManager();
+  const pkg = getPackageName('wl-clipboard');
+
+  if (!runCommand(`${pm.install} ${pkg}`, `Installing ${pkg}`, true)) {
+    return false;
+  }
+
+  console.log('✓ wl-clipboard installed successfully');
+  return true;
+}
+
+/**
+ * Ensures clip.exe is accessible on WSL2.
+ * On WSL2, clip.exe is a Windows host binary typically at
+ * /mnt/c/Windows/System32/clip.exe. If interop is enabled it's usually
+ * already on PATH; if not, we symlink it into ~/.local/bin.
+ * @returns {Promise<boolean>} True if clip.exe is now available
+ */
+async function ensureWSLClipboard() {
+  if (!isWSL2()) return true;
+
+  console.log('\n🔍 Detected WSL2 — checking clip.exe...');
+
+  try {
+    execSync('which clip.exe', { encoding: 'utf-8', stdio: 'pipe' });
+    console.log('✓ clip.exe is already available');
+    return true;
+  } catch {
+    // Not in PATH yet — try to symlink
+  }
+
+  const clipSource = '/mnt/c/Windows/System32/clip.exe';
+  if (!existsSync(clipSource)) {
+    console.error(`✗ clip.exe not found at ${clipSource}`);
+    console.error('  Please ensure WSL2 interop is enabled in your /etc/wsl.conf:');
+    console.error('  [interop]');
+    console.error('  enabled = true');
+    return false;
+  }
+
+  const localBin = join(homedir(), '.local', 'bin');
+  if (!existsSync(localBin)) {
+    mkdirSync(localBin, { recursive: true });
+  }
+
+  const linkTarget = join(localBin, 'clip.exe');
+  if (!existsSync(linkTarget)) {
+    try {
+      symlinkSync(clipSource, linkTarget);
+      console.log(`✓ Symlinked ${linkTarget} -> ${clipSource}`);
+    } catch (error) {
+      console.error(`✗ Failed to symlink clip.exe: ${error.message}`);
+      return false;
+    }
+  }
+
+  ensurePathInShellConfig(localBin, currentOS());
+  console.log('✓ clip.exe is now available');
+  return true;
+}
+
+/**
  * Installs missing dependencies on Linux systems
  * @param {import('./check_deps.mjs').CheckDepsResult} result - The result from checkDeps function
  * @returns {Promise<void>}
@@ -590,6 +678,27 @@ Starting Linux dependency installation
     installResults.code = await installVSCode();
   } else {
     console.log('\n✓ Visual Studio Code is already installed');
+  }
+
+  // --- Clipboard tools ---
+  if (isWSL2()) {
+    installResults['clip.exe'] = await ensureWSLClipboard();
+  }
+
+  if (!details.xclip) {
+    installResults.xclip = await installXclip();
+  } else {
+    console.log('\n✓ xclip is already installed');
+  }
+
+  // Install wl-clipboard if running on Wayland (regardless of whether xclip exists)
+  if (process.env.WAYLAND_DISPLAY) {
+    try {
+      execSync('which wl-copy', { encoding: 'utf-8', stdio: 'pipe' });
+      console.log('\n✓ wl-copy (Wayland clipboard) is already installed');
+    } catch {
+      installResults['wl-clipboard'] = await installWlClipboard();
+    }
   }
 
   // Ensure ~/.local/bin is in PATH

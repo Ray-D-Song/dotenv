@@ -1,5 +1,5 @@
 import { checkDeps } from './check_deps.mjs';
-import { currentOS } from './utils.mjs';
+import { currentOS, isWSL2 } from './utils.mjs';
 import { linuxInstallDeps } from './linux_install_deps.mjs';
 import { osxInstallDeps } from './osx_install_deps.mjs';
 import { execSync } from 'child_process';
@@ -30,6 +30,7 @@ const commonDeps = {
  */
 const linuxDeps = {
   'podman': 'Podman',
+  'xclip': 'xclip (X11 clipboard)',
 }
 
 /**
