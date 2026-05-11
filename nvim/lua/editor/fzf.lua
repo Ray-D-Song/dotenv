@@ -27,7 +27,7 @@ return {
     local fzf = require('fzf-lua')
 
     vim.keymap.set('n', '<leader><leader>f', function()
-      fzf.live_grep_resume()
+      fzf.live_grep({ resume = true })
     end, { desc = 'Live grep (resume)' })
     vim.keymap.set('n', '<leader>f', function()
       fzf.files({ resume = true })

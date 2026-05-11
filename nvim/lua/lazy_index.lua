@@ -31,6 +31,9 @@ require("lazy").setup({
       import = 'editor.fzf'
     },
     {
+      import = 'editor.gitsigns'
+    },
+    {
       "manuuurino/autoread.nvim",
       cmd = "Autoread",
       opts = {},
