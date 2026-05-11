@@ -233,7 +233,8 @@ end, { desc = 'Copy hover content to clipboard' })
 vim.keymap.set('n', 'gs', ':lua require("fzf-lua").live_grep()<CR>')      -- Use fzf-lua for global search
 vim.keymap.set('n', '<D-S-f>', ':lua require("fzf-lua").live_grep()<CR>') -- Use Command+Shift+F for global search
 vim.keymap.set('n', 'cs', ':lua require("fzf-lua").lgrep_curbuf()<CR>')   -- Use fzf-lua to search in current file
-vim.keymap.set('n', '<space>f', ':lua require("fzf-lua").files()<CR>')    -- Use fzf-lua to find files by name
+
+
 vim.keymap.set('n', 'x', ':q<CR>')                                        -- Close current file
 
 -- Split screen operation keymap
