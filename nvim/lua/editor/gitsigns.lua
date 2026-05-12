@@ -23,7 +23,7 @@ return {
       },
       signs_staged_enable = true,
       signcolumn = true,
-      numhl      = true,
+      numhl      = false,
       linehl     = false,
       word_diff  = true,
       current_line_blame = false,
