@@ -12,5 +12,4 @@ return function(capabilities, on_attach)
       },
     }
   })
-  vim.lsp.enable('sqls')
 end

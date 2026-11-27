@@ -4,6 +4,18 @@ local sql_config_fn = require('lsp.sql')
 local c_config_fn = require('lsp.c')
 local zig_config_fn = require('lsp.zig')
 
+local servers = {
+  'lua_ls', 'clangd', 'pyright', 'rust_analyzer', 'eslint', 'intelephense',
+  'tailwindcss-language-server', 'ts_ls', 'tsls', 'vue_ls', 'gopls', 'zls', 'sqls', 'jdtls',
+}
+local lsp_enabled = false
+
+vim.api.nvim_create_user_command('LspToggle', function()
+  lsp_enabled = not lsp_enabled
+  vim.lsp.enable(servers, lsp_enabled)
+  vim.notify('LSP ' .. (lsp_enabled and 'enabled' or 'disabled'))
+end, { desc = 'Toggle language servers' })
+
 -- Track if we were in a quickfix window
 local was_in_qf = false
 
@@ -93,6 +105,7 @@ return {
 
       -- Setup mason-lspconfig to ensure LSP servers are installed
       require('mason-lspconfig').setup({
+        automatic_enable = false,
         ensure_installed = {
           'lua_ls', 'clangd', 'pyright', 'rust_analyzer',
           'eslint', 'ts_ls', 'intelephense',
@@ -101,13 +114,7 @@ return {
       })
 
       -- Configure LSP servers using vim.lsp.config (new API)
-      local servers = {
-        'lua_ls', 'clangd', 'pyright', 'rust_analyzer',
-        'eslint', 'intelephense', 'tailwindcss-language-server', 'ts_ls', 'zls'
-      }
-
       for _, server in ipairs(servers) do
-        vim.lsp.enable(server)
         vim.lsp.config(server, {
           capabilities = capabilities,
           on_attach = on_attach,

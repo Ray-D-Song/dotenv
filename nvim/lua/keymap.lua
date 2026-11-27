@@ -275,7 +275,7 @@ vim.opt.shiftwidth = 2
 vim.opt.nu = true
 
 vim.o.clipboard = "unnamedplus"
-vim.o.background = "dark"
+vim.o.background = "light"
 vim.o.scrolloff = 10
 
 -- terminal config
