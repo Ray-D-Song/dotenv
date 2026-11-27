@@ -132,17 +132,17 @@ async function installAlacritty() {
 }
 
 /**
- * Installs Zellij terminal multiplexer via Homebrew
+ * Installs tmux terminal multiplexer via Homebrew
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
-async function installZellij() {
-  console.log('\n📦 Installing Zellij...');
+async function installTmux() {
+  console.log('\n📦 Installing tmux...');
 
-  if (!runCommand('brew install zellij', 'Installing Zellij via Homebrew')) {
+  if (!runCommand('brew install tmux', 'Installing tmux via Homebrew')) {
     return false;
   }
 
-  console.log('✓ Zellij installed successfully');
+  console.log('✓ tmux installed successfully');
   return true;
 }
 
@@ -313,10 +313,10 @@ Starting macOS dependency installation
     console.log('\n✓ Alacritty is already installed');
   }
 
-  if (!details.zellij) {
-    installResults.zellij = await installZellij();
+  if (!details.tmux) {
+    installResults.tmux = await installTmux();
   } else {
-    console.log('\n✓ Zellij is already installed');
+    console.log('\n✓ tmux is already installed');
   }
 
   if (!details.gh) {

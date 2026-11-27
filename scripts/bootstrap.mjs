@@ -17,7 +17,7 @@ const commonDeps = {
   'go': 'Go',
   'cargo': 'Cargo (Rust)',
   'alacritty': 'Alacritty',
-  'zellij': 'Zellij',
+  'tmux': 'tmux',
 };
 
 /**

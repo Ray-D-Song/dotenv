@@ -254,19 +254,19 @@ async function installAlacritty() {
 }
 
 /**
- * Installs Zellij terminal multiplexer via official installation script
+ * Installs tmux terminal multiplexer via package manager
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
-async function installZellij() {
-  console.log('\n📦 Installing Zellij...');
+async function installTmux() {
+  console.log('\n📦 Installing tmux...');
 
-  const installCmd = `cargo install --locked zellij`;
+  const pm = getPackageManager();
 
-  if (!runCommand(installCmd, 'Installing Zellij')) {
+  if (!runCommand(`${pm.install} tmux`, 'Installing tmux', true)) {
     return false;
   }
 
-  console.log('✓ Zellij installed successfully');
+  console.log('✓ tmux installed successfully');
   return true;
 }
 
@@ -638,10 +638,10 @@ Starting Linux dependency installation
     console.log('\n✓ Alacritty is already installed');
   }
 
-  if (!details.zellij) {
-    installResults.zellij = await installZellij();
+  if (!details.tmux) {
+    installResults.tmux = await installTmux();
   } else {
-    console.log('\n✓ Zellij is already installed');
+    console.log('\n✓ tmux is already installed');
   }
 
   if (!details.podman) {

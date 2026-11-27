@@ -1,11 +1,10 @@
 #!/bin/bash
 
 # Auto-detect system theme and switch terminal color schemes
-# Supported applications: Zellij, Alacritty
+# Supported applications: Alacritty
 # Supports platforms: macOS, GNOME, KDE
 
 # Configuration file paths
-ZELLIJ_CONFIG="$HOME/.config/zellij/config.kdl"
 ALACRITTY_CONFIG="$HOME/codebase/dotenv/alacritty/alacritty.toml"
 
 # Detect system theme based on OS and desktop environment
@@ -62,23 +61,6 @@ sed_inplace() {
 
 # Get current system theme
 SYSTEM_THEME=$(detect_system_theme)
-
-# Update Zellij theme
-if [[ -f "$ZELLIJ_CONFIG" ]]; then
-  ZELLIJ_THEME=$(grep '^theme ' "$ZELLIJ_CONFIG" 2>/dev/null | head -1 | sed 's/theme "\(.*\)"/\1/')
-  
-  if [[ "$SYSTEM_THEME" == "dark" ]]; then
-    if [[ "$ZELLIJ_THEME" != "iceberg-dark" ]]; then
-      sed_inplace 's/theme ".*"/theme "iceberg-dark"/' "$ZELLIJ_CONFIG"
-      echo "[Zellij] Switched to dark theme: iceberg-dark"
-    fi
-  else
-    if [[ "$ZELLIJ_THEME" != "iceberg-light" ]]; then
-      sed_inplace 's/theme ".*"/theme "iceberg-light"/' "$ZELLIJ_CONFIG"
-      echo "[Zellij] Switched to light theme: iceberg-light"
-    fi
-  fi
-fi
 
 # Update Alacritty theme
 if [[ -f "$ALACRITTY_CONFIG" ]]; then

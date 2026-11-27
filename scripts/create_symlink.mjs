@@ -50,10 +50,6 @@ function getConfigMappings(os) {
       target: join(configDir, 'alacritty')
     },
     {
-      source: join(projectRoot, 'zellij'),
-      target: join(configDir, 'zellij')
-    },
-    {
       source: join(projectRoot, 'tmux', 'tmux.conf'),
       target: join(homedir(), '.tmux.conf'),
       type: 'file'
