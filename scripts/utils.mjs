@@ -1,7 +1,7 @@
-import { platform, homedir } from 'os';
-import { existsSync, readFileSync, appendFileSync, symlinkSync, chmodSync } from 'fs';
+import { platform, homedir, tmpdir } from 'os';
+import { existsSync, readFileSync, appendFileSync, symlinkSync, chmodSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'fs';
 import { join } from 'path';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 
 /**
  * @typedef {'mac' | 'linux' | 'windows' | 'unknown'} OSType
@@ -108,4 +108,27 @@ export function downloadUrl(url) {
   return process.argv.includes('--proxy') && /^https:\/\/(github\.com|raw\.githubusercontent\.com)\//.test(url)
     ? `https://ghfast.top/${url}`
     : url;
+}
+
+/** Install Zig with a temporary mirror cache when --proxy is enabled. */
+export function installZigWithMise(misePath, version) {
+  let cacheDir;
+  try {
+    const env = { ...process.env };
+    if (process.argv.includes('--proxy')) {
+      cacheDir = mkdtempSync(join(tmpdir(), 'dotenv-mise-'));
+      mkdirSync(join(cacheDir, 'zig'));
+      writeFileSync(join(cacheDir, 'zig', 'community-mirrors.txt'), 'https://zig.vortan.dev/zig\n');
+      env.MISE_CACHE_DIR = cacheDir;
+      env.MISE_ZIG_USE_COMMUNITY_MIRRORS = 'true';
+      console.log('Using Zig mirror: https://zig.vortan.dev/zig');
+    }
+    execFileSync(misePath, ['use', '--global', `zig@${version}`], { env, stdio: 'inherit' });
+    return true;
+  } catch (error) {
+    console.error(`✗ Installing Zig failed: ${error.message}`);
+    return false;
+  } finally {
+    if (cacheDir) rmSync(cacheDir, { recursive: true, force: true });
+  }
 }

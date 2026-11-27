@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import { downloadUrl } from './utils.mjs';
+import { downloadUrl, installZigWithMise } from './utils.mjs';
 
 /**
  * Executes a shell command and logs the result
@@ -226,9 +226,7 @@ async function installZig() {
   console.log(`\n📦 Installing Zig ${ZIG_VERSION}...`);
 
   const misePath = join(homedir(), '.local', 'bin', 'mise');
-  const installCmd = `${misePath} use --global zig@${ZIG_VERSION}`;
-
-  if (!runCommand(installCmd, `Installing Zig ${ZIG_VERSION} via mise`)) {
+  if (!installZigWithMise(misePath, ZIG_VERSION)) {
     return false;
   }
 

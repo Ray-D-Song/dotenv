@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync, mkdirSync, chmodSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import { currentOS, ensurePathInShellConfig, isWSL2, downloadUrl } from './utils.mjs';
+import { currentOS, ensurePathInShellConfig, isWSL2, downloadUrl, installZigWithMise } from './utils.mjs';
 
 let detectedDistro = null;
 
@@ -377,9 +377,7 @@ async function installZig() {
   console.log(`\n📦 Installing Zig ${ZIG_VERSION}...`);
 
   const misePath = join(homedir(), '.local', 'bin', 'mise');
-  const installCmd = `${misePath} use --global zig@${ZIG_VERSION}`;
-
-  if (!runCommand(installCmd, `Installing Zig ${ZIG_VERSION} via mise`)) {
+  if (!installZigWithMise(misePath, ZIG_VERSION)) {
     return false;
   }
 
