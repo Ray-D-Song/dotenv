@@ -18,6 +18,7 @@ const commonDeps = {
   'cargo': 'Cargo (Rust)',
   'alacritty': 'Alacritty',
   'tmux': 'tmux',
+  'rg': 'ripgrep',
 };
 
 /**

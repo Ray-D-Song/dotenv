@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync, mkdirSync, readdirSync, copyFileSync, rmSync } from 'fs';
 import { homedir, tmpdir } from 'os';
 import { join } from 'path';
-import { currentOS } from './utils.mjs';
+import { currentOS, downloadUrl } from './utils.mjs';
 
 const NERD_FONT_VERSION = 'v3.4.0';
 const FONT_NAME = 'Meslo';
@@ -60,7 +60,7 @@ function downloadFont(tempDir) {
   console.log(`📥 Downloading ${FONT_NAME} Nerd Font...`);
 
   try {
-    execSync(`curl -L -o "${zipPath}" "${DOWNLOAD_URL}"`, { stdio: 'inherit' });
+    execSync(`curl -fsSL -o "${zipPath}" "${downloadUrl(DOWNLOAD_URL)}"`, { stdio: 'inherit' });
     console.log('✓ Download completed');
     return zipPath;
   } catch (error) {

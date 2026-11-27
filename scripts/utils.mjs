@@ -102,3 +102,10 @@ export function ensurePathInShellConfig(dir, os) {
   appendFileSync(configPath, shellConfigLine);
   return true;
 }
+
+/** Route supported GitHub downloads through the mirror when requested. */
+export function downloadUrl(url) {
+  return process.argv.includes('--proxy') && /^https:\/\/(github\.com|raw\.githubusercontent\.com)\//.test(url)
+    ? `https://ghfast.top/${url}`
+    : url;
+}

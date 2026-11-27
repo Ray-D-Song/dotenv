@@ -28,7 +28,7 @@ require("lazy").setup({
       import = 'lsp.config',
     },
     {
-      import = 'editor.fzf'
+      import = 'editor.telescope'
     },
     {
       import = 'editor.gitsigns'

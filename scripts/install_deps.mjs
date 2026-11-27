@@ -17,10 +17,10 @@ const commonDeps = {
   'cargo': 'Cargo (Rust)',
   'alacritty': 'Alacritty',
   'tmux': 'tmux',
+  'rg': 'ripgrep',
   'gh': 'GitHub CLI',
   'lazygit': 'lazygit',
   'zig': 'Zig',
-  'thorium-browser': 'Thorium Browser',
   'code': 'VSCode',
 };
 

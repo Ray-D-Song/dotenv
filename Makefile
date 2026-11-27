@@ -4,6 +4,12 @@
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 
+# Use PROXY=1 to route supported GitHub downloads through the mirror
+ifeq ($(PROXY),1)
+PROXY_FLAG := --proxy
+GITHUB_MIRROR := https://ghfast.top/
+endif
+
 # Default target: install everything
 install:
 	@# Check if running with sudo
@@ -26,10 +32,10 @@ install:
 	@echo "========================================"
 	@echo ""
 	@echo "Step 1/3: Checking and installing dependencies..."
-	@node ./scripts/install_deps.mjs
+	@node ./scripts/install_deps.mjs $(PROXY_FLAG)
 	@echo ""
 	@echo "Step 2/3: Checking and installing fonts..."
-	@node ./scripts/download_nerd_font.mjs
+	@node ./scripts/download_nerd_font.mjs $(PROXY_FLAG)
 	@echo ""
 	@echo "Step 3/3: Checking and creating symlinks..."
 	@node ./scripts/create_symlink.mjs
@@ -52,13 +58,13 @@ ifeq ($(UNAME_S),Linux)
 	@echo "Architecture: $(UNAME_M)"
 	@echo "Downloading latest Neovim AppImage..."
 ifeq ($(UNAME_M),x86_64)
-	@curl -fsSL -o $(HOME)/.local/bin/nvim https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage || \
+	@curl -fsSL -o $(HOME)/.local/bin/nvim $(GITHUB_MIRROR)https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage || \
 		(echo "❌ Primary download failed, trying alternative URL..." && \
-		curl -fsSL -o $(HOME)/.local/bin/nvim https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.appimage)
+		curl -fsSL -o $(HOME)/.local/bin/nvim $(GITHUB_MIRROR)https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.appimage)
 else ifeq ($(UNAME_M),aarch64)
-	@curl -fsSL -o $(HOME)/.local/bin/nvim https://github.com/neovim/neovim/releases/latest/download/nvim-linux-arm64.appimage || \
+	@curl -fsSL -o $(HOME)/.local/bin/nvim $(GITHUB_MIRROR)https://github.com/neovim/neovim/releases/latest/download/nvim-linux-arm64.appimage || \
 		(echo "❌ Primary download failed, trying alternative URL..." && \
-		curl -fsSL -o $(HOME)/.local/bin/nvim https://github.com/neovim/neovim/releases/download/stable/nvim-linux-arm64.appimage)
+		curl -fsSL -o $(HOME)/.local/bin/nvim $(GITHUB_MIRROR)https://github.com/neovim/neovim/releases/download/stable/nvim-linux-arm64.appimage)
 else
 	@echo "❌ Unsupported architecture: $(UNAME_M)"
 	@exit 1

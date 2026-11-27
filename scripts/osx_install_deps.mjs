@@ -2,6 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
+import { downloadUrl } from './utils.mjs';
 
 /**
  * Executes a shell command and logs the result
@@ -41,7 +42,7 @@ function isHomebrewInstalled() {
 async function installHomebrew() {
   console.log('\n📦 Installing Homebrew...');
 
-  const installCmd = `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`;
+  const installCmd = `/bin/bash -c "$(curl -fsSL ${downloadUrl('https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh')})"`;
 
   if (!runCommand(installCmd, 'Installing Homebrew')) {
     return false;
@@ -129,6 +130,11 @@ async function installAlacritty() {
 
   console.log('✓ Alacritty installed successfully');
   return true;
+}
+
+/** Install ripgrep for project searches. */
+async function installRipgrep() {
+  return runCommand('brew install ripgrep', 'Installing ripgrep via Homebrew');
 }
 
 /**
@@ -311,6 +317,12 @@ Starting macOS dependency installation
     installResults.alacritty = await installAlacritty();
   } else {
     console.log('\n✓ Alacritty is already installed');
+  }
+
+  if (!details.rg) {
+    installResults.rg = await installRipgrep();
+  } else {
+    console.log('\n✓ ripgrep is already installed');
   }
 
   if (!details.tmux) {

@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync, mkdirSync, chmodSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import { currentOS, ensurePathInShellConfig, isWSL2 } from './utils.mjs';
+import { currentOS, ensurePathInShellConfig, isWSL2, downloadUrl } from './utils.mjs';
 
 let detectedDistro = null;
 
@@ -156,11 +156,11 @@ async function installNvim() {
 
   // Download latest stable nvim appimage
   const nvimPath = join(nvimDir, 'nvim');
-  const downloadCmd = `curl -fsSL -o ${nvimPath} https://github.com/neovim/neovim/releases/latest/download/${appimageName}`;
+  const downloadCmd = `curl -fsSL -o ${nvimPath} ${downloadUrl(`https://github.com/neovim/neovim/releases/latest/download/${appimageName}`)}`;
 
   if (!runCommand(downloadCmd, 'Downloading Neovim')) {
     // Try alternative URL format
-    const altDownloadCmd = `curl -fsSL -o ${nvimPath} https://github.com/neovim/neovim/releases/download/stable/${appimageName}`;
+    const altDownloadCmd = `curl -fsSL -o ${nvimPath} ${downloadUrl(`https://github.com/neovim/neovim/releases/download/stable/${appimageName}`)}`;
     if (!runCommand(altDownloadCmd, 'Trying alternative download URL')) {
       return false;
     }
@@ -251,6 +251,12 @@ async function installAlacritty() {
 
   console.log('✓ Alacritty installed successfully');
   return true;
+}
+
+/** Install ripgrep for project searches. */
+async function installRipgrep() {
+  const pm = getPackageManager();
+  return runCommand(`${pm.install} ripgrep`, 'Installing ripgrep', true);
 }
 
 /**
@@ -436,51 +442,6 @@ async function installVSCode() {
 }
 
 /**
- * Installs Thorium Browser
- * @returns {Promise<boolean>} True if installation succeeded, false otherwise
- */
-async function installThorium() {
-  console.log('\n📦 Installing Thorium Browser...');
-
-  const distro = detectDistro();
-
-  if (distro === 'arch') {
-    if (!runCommand('pacman -S --noconfirm --needed git base-devel', 'Installing base-devel for AUR', true)) {
-      return false;
-    }
-
-    const installCmd = `mkdir -p ~/aur && cd ~/aur && git clone https://aur.archlinux.org/thorium-browser-bin.git && cd thorium-browser-bin && makepkg -si --noconfirm`;
-    if (!runCommand(installCmd, 'Installing Thorium Browser from AUR')) {
-      return false;
-    }
-  } else {
-    try {
-      execSync('which wget', { encoding: 'utf-8' });
-    } catch {
-      if (!runCommand('apt update && apt install -y wget', 'Installing wget', true)) {
-        return false;
-      }
-    }
-
-    const addRepo = `rm -fv /etc/apt/sources.list.d/thorium.list && wget --no-hsts -P /etc/apt/sources.list.d/ http://dl.thorium.rocks/debian/dists/stable/thorium.list`;
-    if (!runCommand(addRepo, 'Adding Thorium repository', true)) {
-      return false;
-    }
-
-    if (!runCommand('apt update', 'Updating package lists', true)) {
-      return false;
-    }
-
-    if (!runCommand('apt install -y thorium-browser', 'Installing Thorium Browser', true)) {
-      return false;
-    }
-  }
-
-  console.log('✓ Thorium Browser installed successfully');
-  return true;
-}
-
-/**
  * Installs xclip (X11 clipboard tool)
  * @returns {Promise<boolean>} True if installation succeeded, false otherwise
  */
@@ -638,6 +599,12 @@ Starting Linux dependency installation
     console.log('\n✓ Alacritty is already installed');
   }
 
+  if (!details.rg) {
+    installResults.rg = await installRipgrep();
+  } else {
+    console.log('\n✓ ripgrep is already installed');
+  }
+
   if (!details.tmux) {
     installResults.tmux = await installTmux();
   } else {
@@ -666,12 +633,6 @@ Starting Linux dependency installation
     installResults.zig = await installZig();
   } else {
     console.log('\n✓ Zig is already installed');
-  }
-
-  if (!details['thorium-browser']) {
-    installResults['thorium-browser'] = await installThorium();
-  } else {
-    console.log('\n✓ Thorium Browser is already installed');
   }
 
   if (!details.code) {
