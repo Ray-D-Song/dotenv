@@ -1,4 +1,4 @@
-.PHONY: install update-nvim
+.PHONY: install proxy-install update-nvim
 
 # Detect OS and Architecture
 UNAME_S := $(shell uname -s)
@@ -44,6 +44,10 @@ install:
 	@echo "✓ Installation completed successfully!"
 	@echo "========================================"
 	@echo ""
+
+# Install with the GitHub download mirror
+proxy-install:
+	@$(MAKE) install PROXY=1
 
 # Update Neovim to the latest version
 update-nvim:

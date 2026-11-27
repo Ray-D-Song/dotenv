@@ -3,7 +3,7 @@
 安装配置和依赖：`make install`。使用 GitHub 下载镜像：
 
 ```sh
-make install PROXY=1
+make proxy-install
 make update-nvim PROXY=1
 ```
 
